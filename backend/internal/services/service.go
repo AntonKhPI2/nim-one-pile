@@ -26,7 +26,7 @@ func (s *GameService) New(ctx context.Context, cfg game.Config) (*game.State, er
 	if st.PlayerTurn == "computer" && st.Winner == "" {
 		game.ApplyComputerMove(st)
 	}
-	
+
 	if err := s.repo.Save(ctx, st); err != nil {
 		return nil, err
 	}
