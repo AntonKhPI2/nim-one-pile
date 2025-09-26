@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -14,8 +16,34 @@ import (
 )
 
 func MustOpenMySQLGorm(ctx context.Context) *gorm.DB {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
+	raw := os.Getenv("MYSQL_URL")
+	if raw == "" {
+		raw = os.Getenv("DATABASE_URL")
+	}
+
+	var dsn string
+	if strings.HasPrefix(raw, "mysql://") {
+		u, err := url.Parse(raw)
+		if err != nil {
+			panic(fmt.Errorf("parse MYSQL_URL: %w", err))
+		}
+		user := ""
+		pass := ""
+		if u.User != nil {
+			user = u.User.Username()
+			pass, _ = u.User.Password()
+		}
+		host := u.Hostname()
+		port := u.Port()
+		dbName := strings.TrimPrefix(u.Path, "/")
+		params := u.RawQuery
+		if params == "" {
+			params = "parseTime=true&charset=utf8mb4&collation=utf8mb4_0900_ai_ci"
+		}
+		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?%s", user, pass, host, port, dbName, params)
+	} else if raw != "" {
+		dsn = raw
+	} else {
 		host := getenv("DB_HOST", "127.0.0.1")
 		port := getenv("DB_PORT", "3306")
 		user := getenv("DB_USER", "root")
@@ -46,6 +74,7 @@ func MustOpenMySQLGorm(ctx context.Context) *gorm.DB {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetMaxOpenConns(10)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+
 	if err := sqlDB.PingContext(ctx); err != nil {
 		panic(fmt.Errorf("db ping: %w", err))
 	}
