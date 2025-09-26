@@ -184,3 +184,5 @@ logs/
 **/.dockerignore
 mysql_data/
 .idea
+# IDE
+.idea/
