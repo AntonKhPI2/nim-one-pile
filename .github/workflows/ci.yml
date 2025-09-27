@@ -33,7 +33,11 @@ jobs:
           if npm run | grep -q "build"; then npm run build; else echo "no build script"; fi
       - name: Test
         run: |
-          if npm run | grep -q "test"; then npm test -- --ci --watchAll=false; else echo "no tests"; fi
+          if npm run | grep -q "test"; then
+            npm test -- --run
+          else
+            echo "no tests"
+          fi
 
   go:
     name: Backend (Go)
