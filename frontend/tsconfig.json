@@ -8,7 +8,8 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {},
-    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom", "node"],
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src", "vitest.config.ts", "src/setupTests.ts"]
+  "include": ["src", "vitest.config.ts", "src/setupTests.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
