@@ -4,6 +4,10 @@ A tiny full-stack demo of the **one-pile Nim** game with an optimal computer pla
 Backend is a REST API in **Go (GORM + MySQL)**, frontend is **React + Vite**, everything runs via **Docker Compose** (Nginx serves the SPA and proxies `/api`).
 
 ---
+## Demo
+![Nim: one pile demo (light mode)](docs/assets/screenshot.jpg)
+
+---
 
 ## Features
 - Optimal AI for one-pile Nim (normal & misère).
