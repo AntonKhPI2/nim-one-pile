@@ -8,7 +8,7 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {},
-    "types": ["vite/client"]
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom", "node"],
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vitest.config.ts", "src/setupTests.ts"]
 }
