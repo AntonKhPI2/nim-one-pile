@@ -10,7 +10,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates netcat-openbsd
 COPY --from=build /app/server /usr/local/bin/server
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/server
+RUN chmod +x /usr/local/bin/entrypoint.sh
 ENV PORT=8080
 EXPOSE 8080
 USER app
