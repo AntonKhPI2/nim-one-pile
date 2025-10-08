@@ -39,6 +39,8 @@ services:
       - "8080:8080"
     restart: unless-stopped
   frontend:
+    environment:
+      - BACKEND_URL=${BACKEND_URL}
     build:
       context: ./frontend
       dockerfile: Dockerfile
