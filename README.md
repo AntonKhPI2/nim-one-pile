@@ -76,22 +76,22 @@ Copy `.env.example` to `.env` in the **repo root** and adjust if needed:
 
 ```
 
-# Backend / DB
-
+# ===== Backend App =====
 DB_HOST=db
 DB_PORT=3306
 DB_USER=nimuser
 DB_PASSWORD=nimpass
 DB_NAME=nim
 DB_PARAMS=parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci
+# ===== Docker Compose (MySQL) =====
+MYSQL_ROOT_PASSWORD=root
+MYSQL_DATABASE=nim
+MYSQL_USER=nimuser
+MYSQL_PASSWORD=nimpass
 
-# Backend HTTP
-
-PORT=8080
-CORS_ORIGINS=*
-
-# Frontend
-
+# ===== Dev helpers =====
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://backend:8080
 VITE_API_BASE_URL=/api
 
 ````
