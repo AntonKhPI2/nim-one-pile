@@ -47,9 +47,7 @@ jobs:
           API: ${{ secrets.VITE_API_URL }}
         run: |
           API="${API%/}"
-          escAPI=$(printf '%s\n' "$API" | sed 's/[\/&]/\\&/g')
-          find dist -type f \( -name "*.js" -o -name "*.html" -o -name "*.css" \) -print0 | xargs -0 sed -i -E \
-            -e "s#([=:\(\s\"'`])\/api\/#\1${escAPI}/api/#g"
+          node -e "const fs=require('fs'),g=require('glob');const A=process.env.API.replace(/\/+$/,'');const files=[...g.sync('dist/**/*.js'),...g.sync('dist/**/*.html'),...g.sync('dist/**/*.css')];for(const f of files){let s=fs.readFileSync(f,'utf8');s=s.replace(/fetch\(\s*['\"]\/api\//g,'fetch(\"'+A+'/api/');s=s.replace(/([\"'=])\/api\//g,'$1'+A+'/api/');fs.writeFileSync(f,s);}"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
