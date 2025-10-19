@@ -47,17 +47,45 @@ jobs:
           API: ${{ secrets.VITE_API_URL }}
         run: |
           API_URL="${API%/}"
-
-          cat << 'EOF' > patch.html
-          <script>(function(){try{var BASE='__API_URL__'.replace(/\\/+$/,"");var ofetch=window.fetch;window.fetch=function(i,init){try{var u=(typeof i==="string")?i:(i&&i.url?i.url:String(i));if(u&&(/^(?:\\/?api\\/)/).test(u)){if(u[0]!=="/")u="/"+u;u=BASE+u; if(typeof i==="string"||i instanceof URL){i=u}else{var R=i.clone?i.clone():i;i=new Request(u,R)}}}catch(e){} return ofetch(i,init)}; if(window.axios){window.axios.defaults=window.axios.defaults||{};window.axios.defaults.baseURL=BASE}}catch(e){}})();</script>
-          EOF
           
-          ESCAPED_API_URL=$(echo $API_URL | sed 's/\//\\\//g')
-          sed -i "s/__API_URL__/$ESCAPED_API_URL/g" patch.html
-          
-          printf "\n" >> dist/index.html
-          cat patch.html >> dist/index.html
-          printf "\n" >> dist/index.html
+          # Используем Node.js для безопасной генерации JS-кода
+          node -e "
+            const fs = require('fs');
+            const apiUrl = process.env.API_URL;
+            const jsCode = \`
+              <script>
+                (function() {
+                  try {
+                    var BASE = JSON.parse(JSON.stringify(apiUrl)).replace(/\\/+$/, '');
+                    var ofetch = window.fetch;
+                    window.fetch = function(i, init) {
+                      try {
+                        var u = (typeof i === 'string') ? i : (i && i.url ? i.url : String(i));
+                        if (u && (/^(?:\\/?api\\/)/).test(u)) {
+                          if (u[0] !== '/') u = '/' + u;
+                          u = BASE + u;
+                          if (typeof i === 'string' || i instanceof URL) {
+                            i = u;
+                          } else {
+                            var R = i.clone ? i.clone() : i;
+                            i = new Request(u, R);
+                          }
+                        }
+                      } catch (e) {}
+                      return ofetch(i, init);
+                    };
+                    if (window.axios) {
+                      window.axios.defaults = window.axios.defaults || {};
+                      window.axios.defaults.baseURL = BASE;
+                    }
+                  } catch (e) {}
+                })();
+              <\/script>
+            \`;
+            fs.appendFileSync('dist/index.html', '\\n' + jsCode + '\\n');
+          "
+        env:
+          API_URL: ${{ env.API }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
