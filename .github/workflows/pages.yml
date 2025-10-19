@@ -47,7 +47,25 @@ jobs:
           API: ${{ secrets.VITE_API_URL }}
         run: |
           API="${API%/}"
-          node -e "const fs=require('fs'),g=require('glob');const A=process.env.API.replace(/\/+$/,'');const files=[...g.sync('dist/**/*.js'),...g.sync('dist/**/*.html'),...g.sync('dist/**/*.css')];for(const f of files){let s=fs.readFileSync(f,'utf8');s=s.replace(/fetch\(\s*['\"]\/api\//g,'fetch(\"'+A+'/api/');s=s.replace(/([\"'=])\/api\//g,'$1'+A+'/api/');fs.writeFileSync(f,s);}"
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = 'dist';
+          const API = (process.env.API || '').replace(/\/+$/,'');
+          function walk(dir) {
+            for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+              const p = path.join(dir, ent.name);
+              if (ent.isDirectory()) walk(p);
+              else if (/\.(js|html|css)$/.test(ent.name)) {
+                let s = fs.readFileSync(p, 'utf8');
+                s = s.replace(/fetch\(\s*(['"])\s*\/api\//g, (_m, q) => `fetch(${q}${API}/api/`);
+                s = s.replace(/([="'\s\(])\/api\//g, (_m, pre) => `${pre}${API}/api/`);
+                fs.writeFileSync(p, s);
+              }
+            }
+          }
+          walk(root);
+          NODE
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
