@@ -1,0 +1,69 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Inject API URL
+        run: |
+          API="${{ secrets.VITE_API_URL }}"
+          API="${API%/}"
+          echo "VITE_API_URL=$API" > .env.production
+          echo "VITE_API_URL set to: $(cat .env.production)"
+
+      - name: Normalize possible //api/ in sources
+        run: |
+          grep -R --line-number "//api/" src || true
+          sed -i -E 's#//api/#/api/#g' $(git ls-files 'src/**/*.*' || echo) || true
+
+      - name: Build
+        run: npm run build -- --base=/nim-one-pile/
+
+      - name: Normalize built assets
+        run: |
+          find dist -type f -name "*.js" -print0 | xargs -0 sed -i -E 's#//api/#/api/#g'
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
