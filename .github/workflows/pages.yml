@@ -35,56 +35,13 @@ jobs:
 
       - name: Inject API URL
         run: |
-          API="${{ secrets.VITE_API_URL }}"
-          API="${API%/}"
-          echo "VITE_API_BASE_URL=$API" > .env.production```
-
+          API_URL="${{ secrets.VITE_API_URL }}"
+          API_URL="${API_URL%/}"
+          printf 'VITE_API_BASE_URL=%s\n' "$(printf '%q' "$API_URL")" > .env.production
+      
       - name: Build
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
-      - name: Patch dist/index.html to prefix /api calls at runtime
-        env:
-          API_URL: ${{ secrets.VITE_API_URL }}
-        run: |
-          node -e "
-            const fs = require('fs');
-            let apiUrl = process.env.API_URL || '';
-        
-            apiUrl = apiUrl.replace(/\\/+$/, '');
-            const safeApiUrl = JSON.stringify(apiUrl);
-
-            const jsCode = \`
-              <script>
-                (function() {
-                  try {
-                    var BASE = \${safeApiUrl};
-                    var ofetch = window.fetch;
-                    window.fetch = function(i, init) {
-                      try {
-                        var u = (typeof i === 'string') ? i : (i && i.url ? i.url : String(i));
-                        if (u && (/^(?:\\/?api\\/)/).test(u)) {
-                          if (u[0] !== '/') u = '/' + u;
-                          u = BASE + u;
-                          if (typeof i === 'string' || i instanceof URL) {
-                            i = u;
-                          } else {
-                            var R = i.clone ? i.clone() : i;
-                            i = new Request(u, R);
-                          }
-                        }
-                      } catch (e) {}
-                      return ofetch(i, init);
-                    };
-                    if (window.axios) {
-                      window.axios.defaults = window.axios.defaults || {};
-                      window.axios.defaults.baseURL = BASE;
-                    }
-                  } catch (e) {}
-                })();
-              <\/script>
-            \`;
-            fs.appendFileSync('dist/index.html', '\\n' + jsCode + '\\n');
-          "
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
