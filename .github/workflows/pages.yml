@@ -42,15 +42,14 @@ jobs:
       - name: Build
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
-      - name: Prefix absolute API in built assets
+      - name: Rewrite /api/ to absolute API in built assets
         env:
           API: ${{ secrets.VITE_API_URL }}
         run: |
           API="${API%/}"
           escAPI=$(printf '%s\n' "$API" | sed 's/[\/&]/\\&/g')
-          find dist -type f -name "*.js" -print0 | xargs -0 sed -i -E \
-            -e "s#(fetch\((\"|'|`))/api/#\1${escAPI}/api/#g" \
-            -e "s#((\"|'|`))/api/#\1${escAPI}/api/#g"
+          find dist -type f \( -name "*.js" -o -name "*.html" -o -name "*.css" \) -print0 | xargs -0 sed -i -E \
+            -e "s#([=:\(\s\"'`])\/api\/#\1${escAPI}/api/#g"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
