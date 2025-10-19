@@ -42,30 +42,12 @@ jobs:
       - name: Build
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
-      - name: Rewrite /api/ to absolute API in built assets
+      - name: Patch dist/index.html to prefix /api calls at runtime
         env:
           API: ${{ secrets.VITE_API_URL }}
         run: |
           API="${API%/}"
-          node - <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const root = 'dist';
-          const API = (process.env.API || '').replace(/\/+$/,'');
-          function walk(dir) {
-            for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-              const p = path.join(dir, ent.name);
-              if (ent.isDirectory()) walk(p);
-              else if (/\.(js|html|css)$/.test(ent.name)) {
-                let s = fs.readFileSync(p, 'utf8');
-                s = s.replace(/fetch\(\s*(['"])\s*\/api\//g, (_m, q) => `fetch(${q}${API}/api/`);
-                s = s.replace(/([="'\s\(])\/api\//g, (_m, pre) => `${pre}${API}/api/`);
-                fs.writeFileSync(p, s);
-              }
-            }
-          }
-          walk(root);
-          NODE
+          printf '\n<script>(function(){try{var BASE=%s.replace(/\\/+$/,"");var ofetch=window.fetch;window.fetch=function(i,init){try{var u=(typeof i==="string")?i:(i&&i.url?i.url:String(i));if(u&&(/^(?:\\/?api\\/)/).test(u)){if(u[0]!=="/")u="/"+u;u=BASE+u; if(typeof i==="string"||i instanceof URL){i=u}else{var R=i.clone?i.clone():i;i=new Request(u,R)}}}catch(e){} return ofetch(i,init)}; if(window.axios){window.axios.defaults=window.axios.defaults||{};window.axios.defaults.baseURL=BASE}}catch(e){}})();</script>\n' "$(printf '%s' "$API" | sed "s/'/\\\\'/g; s/\"/\\\\\"/g; s/\\/\\\\\\//g")" >> dist/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
