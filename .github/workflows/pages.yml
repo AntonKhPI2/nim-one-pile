@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -38,19 +38,19 @@ jobs:
           API="${{ secrets.VITE_API_URL }}"
           API="${API%/}"
           echo "VITE_API_URL=$API" > .env.production
-          echo "VITE_API_URL set to: $(cat .env.production)"
-
-      - name: Normalize possible //api/ in sources
-        run: |
-          grep -R --line-number "//api/" src || true
-          sed -i -E 's#//api/#/api/#g' $(git ls-files 'src/**/*.*' || echo) || true
 
       - name: Build
-        run: npm run build -- --base=/nim-one-pile/
+        run: npm run build -- --base=/${{ github.event.repository.name }}/
 
-      - name: Normalize built assets
+      - name: Prefix absolute API in built assets
+        env:
+          API: ${{ secrets.VITE_API_URL }}
         run: |
-          find dist -type f -name "*.js" -print0 | xargs -0 sed -i -E 's#//api/#/api/#g'
+          API="${API%/}"
+          escAPI=$(printf '%s\n' "$API" | sed 's/[\/&]/\\&/g')
+          find dist -type f -name "*.js" -print0 | xargs -0 sed -i -E \
+            -e "s#(fetch\((\"|'|`))/api/#\1${escAPI}/api/#g" \
+            -e "s#((\"|'|`))/api/#\1${escAPI}/api/#g"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
