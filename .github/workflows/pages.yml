@@ -37,21 +37,19 @@ jobs:
         run: |
           API="${{ secrets.VITE_API_URL }}"
           API="${API%/}"
-          echo "VITE_API_URL=$API" > .env.production
+          echo "VITE_API_BASE_URL=$API" > .env.production```
 
       - name: Build
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
       - name: Patch dist/index.html to prefix /api calls at runtime
-        # Здесь исправлена ошибка: все переменные окружения находятся в одном блоке 'env'
         env:
           API_URL: ${{ secrets.VITE_API_URL }}
         run: |
           node -e "
             const fs = require('fs');
             let apiUrl = process.env.API_URL || '';
-            
-            // Убираем слэш в конце и создаем безопасную JS-строку
+        
             apiUrl = apiUrl.replace(/\\/+$/, '');
             const safeApiUrl = JSON.stringify(apiUrl);
 
