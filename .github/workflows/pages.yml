@@ -47,9 +47,17 @@ jobs:
           API: ${{ secrets.VITE_API_URL }}
         run: |
           API_URL="${API%/}"
-          ESCAPED_API_URL=$(printf '%s' "$API_URL" | sed "s/'/\\\\'/g")
-          JS_PATCH_TPL='\n<script>(function(){try{var BASE=\'%s\'.replace(/\\/+$/,"");var ofetch=window.fetch;window.fetch=function(i,init){try{var u=(typeof i==="string")?i:(i&&i.url?i.url:String(i));if(u&&(/^(?:\\/?api\\/)/).test(u)){if(u[0]!=="/")u="/"+u;u=BASE+u; if(typeof i==="string"||i instanceof URL){i=u}else{var R=i.clone?i.clone():i;i=new Request(u,R)}}}catch(e){} return ofetch(i,init)}; if(window.axios){window.axios.defaults=window.axios.defaults||{};window.axios.defaults.baseURL=BASE}}catch(e){}})();</script>\n'
-          printf "$JS_PATCH_TPL" "$ESCAPED_API_URL" >> dist/index.html
+
+          cat << 'EOF' > patch.html
+          <script>(function(){try{var BASE='__API_URL__'.replace(/\\/+$/,"");var ofetch=window.fetch;window.fetch=function(i,init){try{var u=(typeof i==="string")?i:(i&&i.url?i.url:String(i));if(u&&(/^(?:\\/?api\\/)/).test(u)){if(u[0]!=="/")u="/"+u;u=BASE+u; if(typeof i==="string"||i instanceof URL){i=u}else{var R=i.clone?i.clone():i;i=new Request(u,R)}}}catch(e){} return ofetch(i,init)}; if(window.axios){window.axios.defaults=window.axios.defaults||{};window.axios.defaults.baseURL=BASE}}catch(e){}})();</script>
+          EOF
+          
+          ESCAPED_API_URL=$(echo $API_URL | sed 's/\//\\\//g')
+          sed -i "s/__API_URL__/$ESCAPED_API_URL/g" patch.html
+          
+          printf "\n" >> dist/index.html
+          cat patch.html >> dist/index.html
+          printf "\n" >> dist/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
