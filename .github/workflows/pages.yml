@@ -1,6 +1,5 @@
 name: Deploy Frontend to GitHub Pages
 
-
 on:
   push:
     branches: [ main ]
@@ -34,9 +33,6 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Debug API URL
-        run: echo "API URL is ${{ secrets.VITE_API_URL }}"
-
       - name: Inject API URL
         run: |
           API="${{ secrets.VITE_API_URL }}"
@@ -51,7 +47,8 @@ jobs:
           API: ${{ secrets.VITE_API_URL }}
         run: |
           API="${API%/}"
-          printf '\n<script>(function(){try{var BASE=%s.replace(/\\/+$/,"");var ofetch=window.fetch;window.fetch=function(i,init){try{var u=(typeof i==="string")?i:(i&&i.url?i.url:String(i));if(u&&(/^(?:\\/?api\\/)/).test(u)){if(u[0]!=="/")u="/"+u;u=BASE+u; if(typeof i==="string"||i instanceof URL){i=u}else{var R=i.clone?i.clone():i;i=new Request(u,R)}}}catch(e){} return ofetch(i,init)}; if(window.axios){window.axios.defaults=window.axios.defaults||{};window.axios.defaults.baseURL=BASE}}catch(e){}})();</script>\n' "$(printf '%s' "$API" | sed "s/'/\\\\'/g; s/\"/\\\\\"/g; s/\\/\\\\\\//g")" >> dist/index.html
+          # Исправлено: добавлено \'\' вокруг %s, чтобы BASE была строкой в JavaScript
+          printf '\n<script>(function(){try{var BASE=\'%s\'.replace(/\\/+$/,"");var ofetch=window.fetch;window.fetch=function(i,init){try{var u=(typeof i==="string")?i:(i&&i.url?i.url:String(i));if(u&&(/^(?:\\/?api\\/)/).test(u)){if(u[0]!=="/")u="/"+u;u=BASE+u; if(typeof i==="string"||i instanceof URL){i=u}else{var R=i.clone?i.clone():i;i=new Request(u,R)}}}catch(e){} return ofetch(i,init)}; if(window.axios){window.axios.defaults=window.axios.defaults||{};window.axios.defaults.baseURL=BASE}}catch(e){}})();</script>\n' "$(printf '%s' "$API" | sed "s/'/\\\\'/g; s/\"/\\\\\"/g; s/\\/\\\\\\//g")" >> dist/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
