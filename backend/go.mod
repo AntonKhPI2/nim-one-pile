@@ -10,7 +10,7 @@ require (
 )
 
 require (
-	golang.org/x/net v0.46.0
+	golang.org/x/net v0.48.0
 	gorm.io/driver/sqlite v1.6.0
 )
 
@@ -19,7 +19,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 )
 
 replace github.com/AntonKhPI2/nim-backend => .
